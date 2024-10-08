@@ -2,13 +2,20 @@ import React, { useState, useContext } from "react";
 import "./App.css";
 import { Label, Note } from "./types"; // Import the Label type from the appropriate module
 import { dummyNotesList } from "./constants"; // Import the dummyNotesList from the appropriate module
-import ClickCounter from "./hooksExercise";
 import { ThemeContext } from "./themeContext";
-import ToggleTheme from "./toggleTheme";
 
 function App() {
-  const [notes, setNotes] = useState(dummyNotesList);
   const theme = useContext(ThemeContext);
+  const [notes, setNotes] = useState(dummyNotesList);
+  const initialNote = {
+    id: -1,
+    title: "",
+    content: "",
+    label: Label.other,
+    favorite: false,
+  };
+  const [createNote, setCreateNote] = useState(initialNote);
+  const [selectedNote, setSelectedNote] = useState<Note>(initialNote);
 
   function handleButtonClick(noteUpdate: Note) {
     const updatedNotes = notes.map((note) => {
@@ -16,8 +23,20 @@ function App() {
         ? { ...note, favorite: !note.favorite }
         : note;
     });
-
     setNotes(updatedNotes);
+  }
+
+  function createNoteHandler(e: React.FormEvent) {
+    e.preventDefault();
+    setNotes([...notes, createNote]);
+  }
+
+  function handleDelete(noteDelete: Note) {
+    function checkNote(n: Note) {
+      return n.id != noteDelete.id;
+    }
+    const updateNotes = notes.filter(checkNote);
+    setNotes(updateNotes);
   }
 
   return (
@@ -29,19 +48,41 @@ function App() {
       }}
     >
       <div className="app-container">
-        <form className="note-form">
+        <form className="note-form" onSubmit={createNoteHandler}>
           <div>
-            <input placeholder="Note Title"></input>
+            <input
+              placeholder="Note Title"
+              onChange={(event) =>
+                setCreateNote({ ...createNote, title: event.target.value })
+              }
+              required
+            ></input>
           </div>
           <div>
-            <textarea placeholder="Note Content"></textarea>
+            <textarea
+              placeholder="Note Content"
+              onChange={(event) =>
+                setCreateNote({ ...createNote, content: event.target.value })
+              }
+              required
+            ></textarea>
           </div>
           <div>
-            <select name="label" id="label-select">
-              <option value="personal">Personal</option>
-              <option value="work">Work</option>
-              <option value="study">Study</option>
-              <option value="other">Other</option>
+            <select
+              name="label"
+              id="label-select"
+              onChange={(event) =>
+                setCreateNote({
+                  ...createNote,
+                  label: event.target.value as Label,
+                })
+              }
+              required
+            >
+              <option value={Label.personal}>Personal</option>
+              <option value={Label.work}>Work</option>
+              <option value={Label.study}>Study</option>
+              <option value={Label.other}>Other</option>
             </select>
           </div>
           <div>
@@ -77,13 +118,14 @@ function App() {
                     background: theme.foreground,
                     color: theme.background,
                   }}
+                  onClick={() => handleDelete(note)}
                 >
                   x
                 </button>
               </div>
-              <h2> {note.title} </h2>
-              <p> {note.content} </p>
-              <p> {note.label} </p>
+              <h2 contentEditable> {note.title} </h2>
+              <p contentEditable> {note.content} </p>
+              <p contentEditable> {note.label} </p>
             </div>
           ))}
         </div>
